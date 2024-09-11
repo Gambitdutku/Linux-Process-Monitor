@@ -15,3 +15,7 @@ To build the shared object file, follow these steps:
 	
    ```bash
    Make
+3. Start the app
+
+   python3
+   app.py

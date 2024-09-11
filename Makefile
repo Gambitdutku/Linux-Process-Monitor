@@ -8,7 +8,7 @@ CXXFLAGS = -fPIC -shared
 SRCS = src/process_info.cpp src/cpu_usage.cpp src/memory_usage.cpp src/disk_usage.cpp src/network_usage.cpp
 
 # Output shared object file
-TARGET = libprocess_monitor.so
+TARGET = lib/libprocess_monitor.so
 
 # Default target
 all: $(TARGET)
