@@ -1,84 +1,117 @@
-import ctypes
-import time
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from libprocess import fetch_cpu_usage, fetch_memory_usage, fetch_disk_usage, fetch_network_usage, fetch_process_by_pid
 import matplotlib.pyplot as plt
-from matplotlib.animation import FuncAnimation
+import matplotlib.animation as animation
+from matplotlib import style
+import time
+style_name = 'dark_background'
+style.use(style_name)
 
-# Load the shared object file
-lib = ctypes.CDLL('./lib/libprocess_monitor.so')
+fig,ax1 = plt.subplots()
 
-# Define argument and return types for functions from the .so file
-lib.getCpuUsage.restype = ctypes.c_double
-lib.getMemoryUsage.restype = ctypes.c_double
-lib.getDiskUsage.restype = ctypes.c_double
-lib.getNetworkUsage.restype = ctypes.c_double
-lib.getProcessByPid.argtypes = [ctypes.c_int]
-lib.getProcessByPid.restype = ctypes.c_char_p
+cpu_data = []  
+time_data = []  
+cpu = fetch_cpu_usage()
+mem = fetch_memory_usage()
+dsk = fetch_disk_usage()
+net = fetch_network_usage()
 
-class SystemMonitorApp:
-    def __init__(self):
-        self.time_data = []
-        self.cpu_data = []
-        self.memory_data = []
-        self.disk_data = []
-        self.network_data = []
 
-        # Set up the plot
-        self.fig, (self.cpu_ax, self.memory_ax, self.disk_ax, self.network_ax) = plt.subplots(4, 1, figsize=(10, 8))
-        self.fig.suptitle('System Resource Usage')
+fig, ((ax1, ax2), (ax3, ax4), (ax5, ax6)) = plt.subplots(3, 2)
 
-        # Initialize the plots
-        self.cpu_line, = self.cpu_ax.plot([], [], label='CPU Usage')
-        self.memory_line, = self.memory_ax.plot([], [], label='Memory Usage')
-        self.disk_line, = self.disk_ax.plot([], [], label='Disk Usage')
-        self.network_line, = self.network_ax.plot([], [], label='Network Usage')
+cpu_data = []
+memory_data = []
+disk_data = []
+network_data = []
+time_data = []  
 
-        self.cpu_ax.legend()
-        self.memory_ax.legend()
-        self.disk_ax.legend()
-        self.network_ax.legend()
+# Fetch CPU usage from your function (replace this with the real function call)
+def fetch_cpu_usage():
+    from libprocess import fetch_cpu_usage
+    return fetch_cpu_usage()  
+def fetch_memory_usage():
+    from libprocess import fetch_memory_usage
+    return fetch_memory_usage()  
+#from libprocess import fetch_cpu_usage, fetch_memory_usage, fetch_disk_usage, fetch_network_usage, fetch_process_by_pid
+def fetch_disk_usage():
+    from libprocess import fetch_disk_usage
+    return fetch_disk_usage()  
+def fetch_network_usage():
+    from libprocess import fetch_network_usage
+    return fetch_network_usage()  
 
-        # Set axis labels
-        self.cpu_ax.set_ylabel('CPU Usage (%)')
-        self.memory_ax.set_ylabel('Memory Usage (MB)')
-        self.disk_ax.set_ylabel('Disk Usage (%)')
-        self.network_ax.set_ylabel('Network Usage (MB/s)')
+def main():
+    ani = animation.FuncAnimation(fig, animate, interval=1000)
+    plt.show()
 
-        # Set x-axis labels
-        self.cpu_ax.set_xlabel('Time')
-        self.memory_ax.set_xlabel('Time')
-        self.disk_ax.set_xlabel('Time')
-        self.network_ax.set_xlabel('Time')
+def animate(i):
+    global time_data, cpu_data, memory_data, disk_data, network_data
 
-        self.anim = FuncAnimation(self.fig, self.update_chart, interval=1000)
+    # Fetch current time and metrics
+    current_time = time.strftime('%H:%M:%S')
+    current_cpu = fetch_cpu_usage()
+    current_memory = fetch_memory_usage()
+    current_disk = fetch_disk_usage()  # Use disk usage for both read and write plots
+    current_network = fetch_network_usage()
 
-        plt.show()
+    # Append current time and metrics to lists
+    time_data.append(current_time)
+    cpu_data.append(current_cpu)
+    memory_data.append(current_memory)
+    disk_data.append(current_disk)
+    network_data.append(current_network)
+    
+    # Limit lists to the last 20 points
+    time_data = time_data[-20:]
+    cpu_data = cpu_data[-20:]
+    memory_data = memory_data[-20:]
+    disk_data = disk_data[-20:]
+    network_data = network_data[-20:]
 
-    def update_chart(self, frame):
-        current_time = time.strftime('%H:%M:%S')
-        self.time_data.append(current_time)
+    # Clear each subplot before plotting new data
+    ax1.clear()
+    ax2.clear()
+    ax3.clear()
+    ax4.clear()
+    ax5.clear()
+    ax6.clear()
 
-        # Fetch real data from the shared object library
-        cpu_usage = lib.getCpuUsage()
-        memory_usage = lib.getMemoryUsage()
-        disk_usage = lib.getDiskUsage()
-        network_usage = lib.getNetworkUsage()
+    # Plot data on each subplot
+    ax1.plot(time_data, cpu_data, label="CPU Usage", color="cyan", marker='o')
+    ax1.set_title('CPU Usage')
+    ax1.set_ylabel('%')
 
-        self.cpu_data.append(cpu_usage)
-        self.memory_data.append(memory_usage)
-        self.disk_data.append(disk_usage)
-        self.network_data.append(network_usage)
+    ax2.plot(time_data, memory_data, label="Memory Usage", color="magenta", marker='o')
+    ax2.set_title('Memory Usage')
+    ax2.set_ylabel('%')
 
-        # Update the plots with real data
-        self.update_plot(self.cpu_line, self.cpu_data, 'CPU Usage (%)', self.cpu_ax)
-        self.update_plot(self.memory_line, self.memory_data, 'Memory Usage (MB)', self.memory_ax)
-        self.update_plot(self.disk_line, self.disk_data, 'Disk Usage (%)', self.disk_ax)
-        self.update_plot(self.network_line, self.network_data, 'Network Usage (MB/s)', self.network_ax)
+    ax3.plot(time_data, disk_data, label="Disk Usage", color="yellow", marker='o')
+    ax3.set_title('Disk Usage')
+    ax3.set_ylabel('%')
 
-    def update_plot(self, line, data, ylabel, ax):
-        line.set_data(range(len(data)), data)
-        ax.relim()
-        ax.autoscale_view()
+    ax4.plot(time_data, network_data, label="Network Usage", color="blue", marker='o')
+    ax4.set_title('Network Usage')
+    ax4.set_ylabel('%')
 
-if __name__ == "__main__":
-    app = SystemMonitorApp()
+    # Using the same disk data for both read and write plots
+    ax5.plot(time_data, disk_data, label="Disk Read", color="green", marker='o')
+    ax5.set_title('Disk Read')
+    ax5.set_ylabel('MB/s')
 
+    ax6.plot(time_data, disk_data, label="Disk Write", color="red", marker='o')
+    ax6.set_title('Disk Write')
+    ax6.set_ylabel('MB/s')
+
+    # Rotate x-ticks for readability
+    for ax in [ax1, ax2, ax3, ax4, ax5, ax6]:
+        ax.tick_params(axis='x', rotation=45)
+        ax.set_xlabel('Time')
+
+    # Adjust layout to ensure no overlap
+    fig.tight_layout()
+
+if __name__ == '__main__':
+    main()
