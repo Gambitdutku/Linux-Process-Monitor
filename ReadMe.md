@@ -14,8 +14,10 @@ To build the shared object file, follow these steps:
 2. Make .so
 	
    ```bash
+   mdir lib
    Make
 3. Start the app
+   ```bash
+    python3 gui/src/gui.py 
+## I don't think anyone using this project at this moment or they ever will becuase every single distro that has GUI I have ever used had system monitor init it has its lack of funciton because I'm bad at front end and tried to make chatgpt do it for me and it turnes out it's worse than me. I'm developing front end on my own now and it'll take some time if you need a library like this one for any reason it's working just fine you can implement it to your own stuff if you give me heads up I'll appricate it 
 
-   python3
-   app.py
