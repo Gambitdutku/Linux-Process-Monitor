@@ -51,10 +51,12 @@ def animate(i):
     global time_data, cpu_data, memory_data, disk_data, network_data
     current_memory_av = get_available_memory()
     current_memory_tot = get_total_memory()
+    print(current_memory_av)
+    print(current_memory_tot)
     # Fetch current time and metrics
     current_time = time.strftime('%H:%M:%S')
     current_cpu = fetch_cpu_usage()
-    current_memory = current_memory_tot - current_memory_av
+    current_memory = current_memory_av
     current_disk = fetch_disk_usage()  # Use disk usage for both read and write plots
     current_network = fetch_network_usage()
 
