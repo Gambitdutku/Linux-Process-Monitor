@@ -4,36 +4,41 @@
 #include <string>
 #include <sstream>
 
-extern "C" void getDiskUsage() {
+extern "C" void getDiskUsage(
+    unsigned long* reads_completed, 
+    unsigned long* sectors_read, 
+    unsigned long* writes_completed, 
+    unsigned long* sectors_written) {
+    
     std::ifstream diskstats("/proc/diskstats");
     std::string line;
 
-    // get disks from /proc/diskstats
-    while (std::getline(diskstats, line)) {
+    // Initialize output variables to 0
+    *reads_completed = 0;
+    *sectors_read = 0;
+    *writes_completed = 0;
+    *sectors_written = 0;
 
+    // Get disks from /proc/diskstats
+    while (std::getline(diskstats, line)) {
         if (line.find("sd") != std::string::npos || line.find("nvme") != std::string::npos) {
             std::istringstream iss(line);
             std::string device;
-            unsigned long reads_completed, reads_merged, sectors_read, time_reading;
-            unsigned long writes_completed, writes_merged, sectors_written, time_writing;
+            unsigned long r_completed, r_merged, s_read, t_reading;
+            unsigned long w_completed, w_merged, s_written, t_writing;
             unsigned long in_progress_io, io_ticks, time_in_queue;
 
-            // let's read data
-            iss >> device >> reads_completed >> reads_merged >> sectors_read >> time_reading
-                >> writes_completed >> writes_merged >> sectors_written >> time_writing
+            // Read data
+            iss >> device >> r_completed >> r_merged >> s_read >> t_reading
+                >> w_completed >> w_merged >> s_written >> t_writing
                 >> in_progress_io >> io_ticks >> time_in_queue;
 
-            // giving out output
-            std::cout << "Disk: " << device << std::endl;
-            std::cout << "Reads Completed: " << reads_completed << std::endl;
-            std::cout << "Sectors Read: " << sectors_read << std::endl;
-            std::cout << "Writes Completed: " << writes_completed << std::endl;
-            std::cout << "Sectors Written: " << sectors_written << std::endl;
-            std::cout << "Time Reading (ms): " << time_reading << std::endl;
-            std::cout << "Time Writing (ms): " << time_writing << std::endl;
-            std::cout << "In Progress I/O: " << in_progress_io << std::endl;
-            std::cout << "I/O Ticks (ms): " << io_ticks << std::endl;
-            std::cout << "Time in Queue (ms): " << time_in_queue << std::endl;
+            // Aggregate results
+            *reads_completed += r_completed;
+            *sectors_read += s_read;
+            *writes_completed += w_completed;
+            *sectors_written += s_written;
         }
     }
 }
+
